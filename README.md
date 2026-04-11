@@ -88,7 +88,7 @@ API Documentation
 
 Swagger UI:
 
-http://127.0.0.1:8000/api/doc
+Swagger UI is available at `/api/doc`
 
 ---
 
@@ -106,9 +106,9 @@ php bin/phpunit
 ---
 
 Notes
-Asynchronous processing is used to handle high load scenarios.
-Controller does not write directly to database.
-External API is used for IP-to-country resolution.
+worker must be running for async processing
+country resolution depends on external API availability
+GET sorting supports one field at a time
 
 ```md
 ## Architecture Overview
@@ -118,3 +118,14 @@ Controller → MessageBus → Message → Handler → Resolver → Factory → D
 
 GET flow:
 Controller → Repository → DB → JSON response
+
+```
+
+## Test environment
+
+Create `.env.test.local` and configure test database connection.
+Then run:
+
+php bin/console doctrine:migrations:migrate --env=test -n
+php bin/console messenger:setup-transports --env=test
+php bin/phpunit
