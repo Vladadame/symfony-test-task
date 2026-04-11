@@ -1,0 +1,10 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Test Task API
+            description: REST API for storing and retrieving user records
+            version: 1.0.0
+    areas:
+        default:
+            path_patterns:
+                - ^/api(?!/doc$)

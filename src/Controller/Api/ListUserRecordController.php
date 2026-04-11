@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Repository\UserRecordRepository;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,6 +15,24 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ListUserRecordController extends AbstractController
 {
     #[Route('', methods: ['GET'])]
+    #[OA\Get(
+        path: '/api/users',
+        summary: 'Get stored user records',
+        tags: ['Users']
+    )]
+    #[OA\Parameter(
+        name: 'sort',
+        in: 'query',
+        required: false,
+        schema: new OA\Schema(type: 'string', enum: ['firstName', 'lastName', 'country', 'createdAt'])
+    )]
+    #[OA\Parameter(
+        name: 'order',
+        in: 'query',
+        required: false,
+        schema: new OA\Schema(type: 'string', enum: ['asc', 'desc'])
+    )]
+    #[OA\Response(response: 200, description: 'List of stored user records')]
     public function __invoke(
         Request $request,
         UserRecordRepository $repository,

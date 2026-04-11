@@ -15,10 +15,36 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use OpenApi\Attributes as OA;
 
 #[Route('/api/users')]
 final class CreateUserRecordController extends AbstractController
 {
+    #[OA\Post(
+    path: '/api/users',
+    summary: 'Accept user record for asynchronous processing',
+    tags: ['Users'],
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['firstName', 'lastName', 'phoneNumbers'],
+            properties: [
+                new OA\Property(property: 'firstName', type: 'string', example: 'Yura'),
+                new OA\Property(property: 'lastName', type: 'string', example: 'Test'),
+                new OA\Property(
+                    property: 'phoneNumbers',
+                    type: 'array',
+                    items: new OA\Items(type: 'string'),
+                    example: ['+380971234567', '+380631234567']
+                    ),
+                ]
+            )
+        )
+    )]  
+    #[OA\Response(response: 202, description: 'Accepted for processing')]
+    #[OA\Response(response: 400, description: 'Invalid JSON payload')]
+    #[OA\Response(response: 422, description: 'Validation failed')]
+
     #[Route('', methods: ['POST'])]
     public function __invoke(
         Request $request,
