@@ -64,9 +64,57 @@ docker run --name test-task-postgres \
   -p 5433:5432 \
   -d postgres:16
 
+```
   Configure environment
 
-Create .env.local:
+2. Create .env.local:
 
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/test_task?serverVersion=16&charset=utf8"
 MESSENGER_TRANSPORT_DSN=doctrine://default
+
+3. Run migrations
+php bin/console doctrine:migrations:migrate
+
+4. Setup messenger
+php bin/console messenger:setup-transports
+
+5. Start server
+symfony server:start
+
+6. Start worker
+php bin/console messenger:consume async -vv
+
+API Documentation
+
+Swagger UI:
+
+http://127.0.0.1:8000/api/doc
+
+---
+
+Example Request
+POST
+{
+  "firstName": "Yura",
+  "lastName": "Test",
+  "phoneNumbers": ["+380971234567"]
+}
+
+Run Tests
+php bin/phpunit
+
+---
+
+Notes
+Asynchronous processing is used to handle high load scenarios.
+Controller does not write directly to database.
+External API is used for IP-to-country resolution.
+
+```md
+## Architecture Overview
+
+POST flow:
+Controller → MessageBus → Message → Handler → Resolver → Factory → DB
+
+GET flow:
+Controller → Repository → DB → JSON response
