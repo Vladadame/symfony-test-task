@@ -7,7 +7,7 @@ namespace App\Service;
 final class PhoneNumberNormalizer
 {
     /**
-     * @param array $phones
+     * @param mixed[] $phones
      * @return string[]
      */
     public function normalizeMany(array $phones): array

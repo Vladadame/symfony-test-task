@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\MessageHandler;
 
-use App\Factory\UserRecordFactory;
+use App\Entity\PhoneNumber;
+use App\Entity\UserRecord;
+use App\Interface\IpCountryResolverInterface;
 use App\Message\CreateUserRecordMessage;
-use App\Service\IpCountryResolverInterface;
+use App\Service\PhoneNumberNormalizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -15,14 +17,17 @@ final class CreateUserRecordMessageHandler
 {
     public function __construct(
         private readonly IpCountryResolverInterface $resolver,
-        private readonly UserRecordFactory $factory,
+        private readonly PhoneNumberNormalizer $phoneNumberNormalizer,
         private readonly EntityManagerInterface $em,
     ) {
     }
 
     public function __invoke(CreateUserRecordMessage $message): void
     {
-        if (trim($message->firstName) === '' || trim($message->lastName) === '') {
+        $firstName = trim($message->firstName);
+        $lastName = trim($message->lastName);
+
+        if ($firstName === '' || $lastName === '') {
             throw new \InvalidArgumentException('Invalid name');
         }
 
@@ -33,16 +38,25 @@ final class CreateUserRecordMessageHandler
         }
 
         $country = $this->resolver->resolve($message->ipAddress) ?? null;
+        $normalizedPhones = $this->phoneNumberNormalizer->normalizeMany($message->phoneNumbers);
 
-        $userRecord = $this->factory->create(
-            firstName: trim($message->firstName),
-            lastName: trim($message->lastName),
-            ipAddress: $message->ipAddress,
-            country: $country,
-            phoneNumbers: $message->phoneNumbers,
-        );
+        if ($normalizedPhones === []) {
+            throw new \InvalidArgumentException('No valid phone numbers');
+        }
 
-        $this->em->persist($userRecord);
+        $user = new UserRecord();
+        $user->setFirstName($firstName);
+        $user->setLastName($lastName);
+        $user->setIpAddress($message->ipAddress);
+        $user->setCountry($country);
+
+        foreach ($normalizedPhones as $phoneValue) {
+            $phone = new PhoneNumber();
+            $phone->setPhoneNumber($phoneValue);
+            $user->addPhoneNumber($phone);
+        }
+
+        $this->em->persist($user);
         $this->em->flush();
     }
 }

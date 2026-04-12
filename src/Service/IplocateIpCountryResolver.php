@@ -6,6 +6,7 @@ namespace App\Service;
 
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use App\Interface\IpCountryResolverInterface;
 
 final class IplocateIpCountryResolver implements IpCountryResolverInterface
 {

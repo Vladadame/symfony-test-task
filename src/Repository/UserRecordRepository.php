@@ -40,7 +40,7 @@ final class UserRecordRepository extends ServiceEntityRepository
             $user->getFirstName(),
             $user->getLastName(),
             $user->getIpAddress(),
-            $user->getCountry() ?? '',
+            $user->getCountry(),
             phoneNumbers: array_map(
                 static fn (PhoneNumber $phone): string => $phone->getPhoneNumber(),
                 $user->getPhoneNumbers()->toArray()
