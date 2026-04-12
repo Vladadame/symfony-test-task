@@ -7,6 +7,10 @@ namespace App\Repository;
 use App\Entity\UserRecord;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\DTO\OutPut\UserRecordModel;
+use App\DTO\Input\Api\ListUserRecordRequest;
+use App\Entity\PhoneNumber;
+
 
 /**
  * @extends ServiceEntityRepository<UserRecord>
@@ -19,25 +23,30 @@ final class UserRecordRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return UserRecord[]
+     * @return UserRecordModel[]
      */
-    public function findSorted(string $sort, string $order): array
+    public function findSorted(ListUserRecordRequest $request): array
     {
-        $allowedSortFields = [
-            'firstName' => 'u.firstName',
-            'lastName' => 'u.lastName',
-            'country' => 'u.country',
-            'createdAt' => 'u.createdAt',
-        ];
-
-        $sortField = $allowedSortFields[$sort] ?? $allowedSortFields['createdAt'];
-        $direction = strtolower($order) === 'asc' ? 'ASC' : 'DESC';
-
-        return $this->createQueryBuilder('u')
-            ->leftJoin('u.phoneNumbers', 'p')
-            ->addSelect('p')
-            ->orderBy($sortField, $direction)
+        $records =  $this->createQueryBuilder('u')
+            ->orderBy('u.'.$request->sort->value, $request->order->value)
             ->getQuery()
             ->getResult();
+            
+        return array_map(
+        static fn (UserRecord $user): UserRecordModel => new UserRecordModel(
+            $user->getId(),
+            $user->getFirstName(),
+            $user->getLastName(),
+            $user->getIpAddress(),
+            $user->getCountry() ?? '',
+            phoneNumbers: array_map(
+                static fn (PhoneNumber $phone): string => $phone->getPhoneNumber(),
+                $user->getPhoneNumbers()->toArray()
+            ),
+            createdAt: $user->getCreatedAt(),
+        ),
+        $records
+    );
+            
     }
 }
