@@ -22,14 +22,24 @@ final class CreateUserRecordMessageHandler
 
     public function __invoke(CreateUserRecordMessage $message): void
     {
-        $country = $this->resolver->resolve($message->ipAddress);
+        if (trim($message->firstName) === '' || trim($message->lastName) === '') {
+            throw new \InvalidArgumentException('Invalid name');
+        }
+
+        foreach ($message->phoneNumbers as $phoneNumber) {
+            if (!is_string($phoneNumber) || trim($phoneNumber) === '') {
+                throw new \InvalidArgumentException('Invalid phone number');
+            }
+        }
+
+        $country = $this->resolver->resolve($message->ipAddress) ?? null;
 
         $userRecord = $this->factory->create(
-            $message->firstName,
-            $message->lastName,
-            $message->ipAddress,
-            $country,
-            $message->phoneNumbers,
+            firstName: trim($message->firstName),
+            lastName: trim($message->lastName),
+            ipAddress: $message->ipAddress,
+            country: $country,
+            phoneNumbers: $message->phoneNumbers,
         );
 
         $this->em->persist($userRecord);

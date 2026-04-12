@@ -7,7 +7,7 @@ namespace App\Repository;
 use App\Entity\UserRecord;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use App\DTO\OutPut\UserRecordModel;
+use App\DTO\Output\Api\UserRecordModel;
 use App\DTO\Input\Api\ListUserRecordRequest;
 use App\Entity\PhoneNumber;
 
@@ -27,8 +27,10 @@ final class UserRecordRepository extends ServiceEntityRepository
      */
     public function findSorted(ListUserRecordRequest $request): array
     {
-        $records =  $this->createQueryBuilder('u')
-            ->orderBy('u.'.$request->sort->value, $request->order->value)
+        $records = $this->createQueryBuilder('u')
+            ->leftJoin('u.phoneNumbers', 'p')
+            ->addSelect('p')
+            ->orderBy('u.' . $request->sort->value, $request->order->value)
             ->getQuery()
             ->getResult();
             
