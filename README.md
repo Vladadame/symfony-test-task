@@ -4,51 +4,91 @@ REST API for storing and retrieving user records.
 
 ## Features
 
-- Accepts user data via JSON
-- Processes requests asynchronously using Symfony Messenger
-- Stores user records in PostgreSQL
-- Saves client IP address
-- Resolves country via external API (iplocation)
-- Supports sorting of results
-- OpenAPI (Swagger) documentation included
-- Covered by tests (PHPUnit)
+* Create user records via JSON
+* Asynchronous processing using Symfony Messenger
+* Store data in PostgreSQL
+* Save client IP address
+* Resolve country via external API
+* Sorting support for GET requests
+* API Key authentication (via header)
+* OpenAPI documentation (Swagger)
+* Covered by tests (PHPUnit)
 
 ---
 
 ## Tech Stack
 
-- PHP 8.4
-- Symfony
-- Doctrine ORM
-- PostgreSQL
-- Symfony Messenger
-- PHPUnit
-- NelmioApiDocBundle (Swagger)
+* PHP 8.4
+* Symfony
+* Doctrine ORM
+* PostgreSQL
+* Symfony Messenger
+* NelmioApiDocBundle (Swagger)
+* PHPUnit
+
+---
+
+## Endpoints
+
+### POST /api/users
+
+Creates a new user record (asynchronously).
+
+**Request example:**
+
+```json
+{
+  "firstName": "Yura",
+  "lastName": "Test",
+  "phoneNumbers": ["+380971234567"]
+}
+```
+
+**Response:**
+
+* `202 Accepted`
+
+---
+
+### GET /api/users
+
+Returns stored user records.
+
+**Query parameters:**
+
+* `sort`: `firstName | lastName | country | createdAt`
+* `order`: `asc | desc`
+
+---
+
+## Authentication
+
+All `/api/*` endpoints require API key.
+
+Add header to requests:
+
+```
+X-API-Key: super-secret-key
+```
 
 ---
 
 ## How it works
 
-### POST /api/users
+### POST flow
 
-- Accepts JSON payload
-- Validates input
-- Dispatches message to queue
-- Returns `202 Accepted`
+Controller → DTO → MessageBus → Message → Handler → Resolver → Entity → DB
 
 ### Worker
 
-- Consumes messages from queue
-- Resolves country by IP
-- Creates entities
-- Saves data to database
+* Consumes messages from queue
+* Resolves country by IP
+* Creates entities
+* Saves data to database
 
-### GET /api/users
+### GET flow
 
-- Returns stored records
-- Supports sorting:
-  - `sort=firstName|lastName|country|createdAt`
-  - `order=asc|desc`
+Controller → DTO → Repository → DB → DTO → JSON response
 
 ---
 
@@ -63,69 +103,97 @@ docker run --name test-task-postgres \
   -e POSTGRES_PASSWORD=postgres \
   -p 5433:5432 \
   -d postgres:16
+```
+
+---
+
+### 2. Configure environment
+
+Create `.env.local`:
 
 ```
-  Configure environment
-
-2. Create .env.local:
-
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/test_task?serverVersion=16&charset=utf8"
 MESSENGER_TRANSPORT_DSN=doctrine://default
-
-3. Run migrations
-php bin/console doctrine:migrations:migrate
-
-4. Setup messenger
-php bin/console messenger:setup-transports
-
-5. Start server
-symfony server:start
-
-6. Start worker
-php bin/console messenger:consume async -vv
-
-API Documentation
-
-Swagger UI:
-
-Swagger UI is available at `/api/doc`
-
----
-
-Example Request
-POST
-{
-  "firstName": "Yura",
-  "lastName": "Test",
-  "phoneNumbers": ["+380971234567"]
-}
-
-Run Tests
-php bin/phpunit
-
----
-
-Notes
-worker must be running for async processing
-country resolution depends on external API availability
-GET sorting supports one field at a time
-
-```md
-## Architecture Overview
-
-POST flow:
-Controller → MessageBus → Message → Handler → Resolver → Factory → DB
-
-GET flow:
-Controller → Repository → DB → JSON response
-
+APP_API_KEY=super-secret-key
 ```
 
-## Test environment
+---
+
+### 3. Run migrations
+
+```bash
+php bin/console doctrine:migrations:migrate
+```
+
+---
+
+### 4. Setup messenger
+
+```bash
+php bin/console messenger:setup-transports
+```
+
+---
+
+### 5. Start server
+
+```bash
+symfony server:start
+```
+
+---
+
+### 6. Start worker
+
+```bash
+php bin/console messenger:consume async -vv
+```
+
+---
+
+## API Documentation
+
+Swagger UI available at:
+
+```
+http://127.0.0.1:8000/api/doc
+```
+
+Use the **Authorize** button and provide API key:
+
+```
+super-secret-key
+```
+
+---
+
+## Run Tests
+
+```bash
+php bin/phpunit
+```
+
+---
+
+## Notes
+
+* Worker must be running for async processing
+* API key is required for all endpoints
+* Country resolution depends on external API availability
+* Sorting supports one field at a time
+* Local IP (127.0.0.1) may return null country
+
+---
+
+## Test Environment
 
 Create `.env.test.local` and configure test database connection.
+
 Then run:
 
+```bash
 php bin/console doctrine:migrations:migrate --env=test -n
 php bin/console messenger:setup-transports --env=test
 php bin/phpunit
+```
+
